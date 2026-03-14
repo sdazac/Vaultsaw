@@ -241,7 +241,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3209621824416223549}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 8c6b9c679e9f14b4f85475a9b0e21dd8, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -353,7 +353,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3553923638068988513}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 8c6b9c679e9f14b4f85475a9b0e21dd8, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -395,7 +395,7 @@ Transform:
   m_GameObject: {fileID: 4333511070789949639}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10, y: 1.11, z: 0}
+  m_LocalPosition: {x: 10, y: 1.06, z: 0}
   m_LocalScale: {x: 8, y: 0.3, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -865,13 +865,6 @@ MonoBehaviour:
   - {fileID: 2743248447332637118}
   - {fileID: 8375905735147302003}
   boxY: 0
-  rampTopPrefab: {fileID: 5313777009658619359, guid: b7838d8cc21520343b9ef7e7b09b07fa, type: 3}
-  rampBottomPrefab: {fileID: 1297438091357283789, guid: 614e7f4c87bbe744495463f4fdac1766, type: 3}
-  rampOpenY_Top: 3.5
-  rampClosedY_Top: 1.6
-  rampOpenY_Bottom: -3.5
-  rampClosedY_Bottom: -1.6
-  rampAnimDuration: 0.4
   warningSignPrefab: {fileID: 7406481062133768546}
   warningOffsetX: -8
 --- !u!1 &6821782768122131681
@@ -972,7 +965,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6821782768122131681}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 8c6b9c679e9f14b4f85475a9b0e21dd8, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1084,7 +1077,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6835830179639756648}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 8c6b9c679e9f14b4f85475a9b0e21dd8, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1109,7 +1102,6 @@ GameObject:
   - component: {fileID: 8470047883254461018}
   - component: {fileID: 4707167281912033741}
   - component: {fileID: 2354047457568721757}
-  - component: {fileID: 7241196557354638332}
   m_Layer: 0
   m_Name: WarningSign
   m_TagString: Untagged
@@ -1190,28 +1182,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &7241196557354638332
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7406481062133768546}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &7995592149295635986
 GameObject:
   m_ObjectHideFlags: 0

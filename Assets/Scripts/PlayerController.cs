@@ -1,16 +1,21 @@
 using UnityEngine;
+using System.Collections;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
-    [Header("Posiciones de Pisos")]
-    public float floorY = -2f;
-    public float ceilingY = 2f;
-    public float midY = -0.5f;      // ← carril central nuevo
-    public bool hasMidFloor = false; // ← se activa solo en TuneSection
+    [Header("Carriles Y")]
+    public float floorY   = -2f;
+    public float ceilingY =  2f;
 
-    [Header("Movimiento")]
-    public float jumpDuration = 0.18f;
+    [Header("Slow Motion")]
+    public float slowMotionScale   = 0.3f;  // 0.3 = 30% velocidad
+    public float slowMotionLerp    = 3f;    // velocidad de transición
+
+    [Header("Física")]
+    public float gravityForce  = 35f;
+    public float jumpForce     = 22f;
+    public float maxVertSpeed  = 18f;
 
     [Header("Rotación Sierra")]
     public float rotationSpeed = 360f;
@@ -25,19 +30,30 @@ public class PlayerController : MonoBehaviour
     public ParticleSystem deathParticles;
     public ParticleSystem propulsionTrail;
 
-    private bool isOnFloor = true;
-    [HideInInspector] public bool isJumping = false;
-    private float jumpTimer = 0f;
-    private Vector3 jumpStartPos;
-    private Vector3 jumpEndPos;
     private Rigidbody rb;
+    private bool isOnFloor     = true;
+    private bool inTuneSection = false;
+    public bool InTuneSection => inTuneSection;
+    private float lastJumpTime = -1f;
+    private const float JUMP_COOLDOWN = 0.2f;
+    public float playerRadius = 0.45f;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.useGravity = false;
-        rb.isKinematic = true; // Kinematic para que no sea empujado por físicas
-        transform.position = new Vector3(transform.position.x, floorY, 0f);
+        rb.useGravity  = false;
+        rb.isKinematic = false;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
+        // Solo freezear X, Z y rotaciones — Y libre para física real
+        rb.constraints = RigidbodyConstraints.FreezePositionX
+                       | RigidbodyConstraints.FreezePositionZ
+                       | RigidbodyConstraints.FreezeRotationX
+                       | RigidbodyConstraints.FreezeRotationY
+                       | RigidbodyConstraints.FreezeRotationZ;
+
+        transform.position = new Vector3(transform.position.x, floorY + playerRadius, 0f);
     }
 
     void Start()
@@ -49,17 +65,45 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         if (!GameManager.Instance.IsPlaying) return;
-
         HandleJumpInput();
         HandlePropulsionInput();
-        HandleJumpMovement();
         RotateSaw();
+
+        // Solo forzar Z=0 en Update, no tocar Y
+        Vector3 pos = transform.position;
+        pos.z = 0f;
+        transform.position = pos;
+    }
+
+    void FixedUpdate()
+    {
+        if (!GameManager.Instance.IsPlaying) return;
+        ApplyCustomGravity();
+        ClampVerticalSpeed();
+    }
+
+    void ApplyCustomGravity()
+    {
+        float gravDir = isOnFloor ? -1f : 1f;
+        rb.AddForce(Vector3.up * gravDir * gravityForce, ForceMode.Acceleration);
+    }
+
+    void ClampVerticalSpeed()
+    {
+        Vector3 v = rb.linearVelocity;
+        v.y = Mathf.Clamp(v.y, -maxVertSpeed, maxVertSpeed);
+        v.x = 0f;
+        v.z = 0f;
+        rb.linearVelocity = v;
     }
 
     void HandleJumpInput()
     {
-        if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
-            TryJump();
+        if (inTuneSection) return;
+        bool pressed = Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0);
+        if (!pressed) return;
+        if (Time.time - lastJumpTime < JUMP_COOLDOWN) return;
+        Jump();
     }
 
     void HandlePropulsionInput()
@@ -68,60 +112,61 @@ public class PlayerController : MonoBehaviour
             TogglePropulsion();
     }
 
-    public void TryJump()
-{
-    if (isJumping) return;
-    isJumping = true;
-    jumpTimer = 0f;
-    jumpStartPos = transform.position;
-
-    if (hasMidFloor)
+    void Jump()
     {
-        // En TuneSection: solo puede estar en el carril del medio
-        jumpEndPos = new Vector3(transform.position.x, midY, 0f);
+        lastJumpTime = Time.time;
+        isOnFloor    = !isOnFloor;
+        float dir    = isOnFloor ? -1f : 1f;
+        rb.linearVelocity = new Vector3(0f, jumpForce * dir, 0f);
     }
-    else
-    {
-        jumpEndPos = new Vector3(transform.position.x,
-                     isOnFloor ? ceilingY : floorY, 0f);
-    }
-}
 
     public void TogglePropulsion()
     {
         bool newState = !GameManager.Instance.IsPropulsionActive;
         GameManager.Instance.SetPropulsion(newState);
-
         if (meshRenderer)
             meshRenderer.material = newState ? propulsionMaterial : normalMaterial;
-
         if (propulsionTrail)
         {
             if (newState) propulsionTrail.Play();
             else propulsionTrail.Stop();
         }
-
         AudioManager.Instance?.PlayPropulsionToggle(newState);
     }
 
-    void HandleJumpMovement()
+    public void EnterTuneSection()
     {
-        if (!isJumping) return;
+        if (inTuneSection) return;
+        inTuneSection = true;
+        rb.linearVelocity = Vector3.zero;
+        StartCoroutine(LerpTimeScale(slowMotionScale));
+        Debug.Log("[Player] EnterTuneSection");
+    }
 
-        jumpTimer += Time.deltaTime;
-        float t = Mathf.Clamp01(jumpTimer / jumpDuration);
-        float easedT = t * t * (3f - 2f * t);
+    public void ExitTuneSection()
+    {
+        inTuneSection = false;
+        isOnFloor     = true;
+        StartCoroutine(LerpTimeScale(1f));
+        Debug.Log("[Player] ExitTuneSection");
+    }
 
-        Vector3 pos = Vector3.Lerp(jumpStartPos, jumpEndPos, easedT);
-        pos.z = 0f;
-        transform.position = pos;
+    IEnumerator LerpTimeScale(float target)
+    {
+        float start   = Time.timeScale;
+        float elapsed = 0f;
+        float duration = 0.4f;
 
-        if (t >= 1f)
+        while (elapsed < duration)
         {
-            isJumping = false;
-            isOnFloor = !isOnFloor;
-            transform.position = jumpEndPos;
+            elapsed        += Time.unscaledDeltaTime;
+            Time.timeScale  = Mathf.Lerp(start, target, elapsed / duration);
+            Time.fixedDeltaTime = 0.02f * Time.timeScale;
+            yield return null;
         }
+
+        Time.timeScale      = target;
+        Time.fixedDeltaTime = 0.02f * target;
     }
 
     void RotateSaw()
@@ -129,31 +174,33 @@ public class PlayerController : MonoBehaviour
         transform.Rotate(0f, 0f, -rotationSpeed * Time.deltaTime, Space.Self);
     }
 
-    // ── Colisiones ───────────────────────────────────
-
-    void OnTriggerEnter(Collider other)
+    public void ReceiveTrigger(Collider other)
     {
-        Debug.Log("Trigger con: " + other.tag);
-
         if (other.CompareTag("Coin"))
             CollectCoin(other.gameObject);
         else if (other.CompareTag("Obstacle"))
             HandleObstacleHit();
-        else if (other.CompareTag("Wall"))
+        else if (other.CompareTag("DestructibleBox"))
         {
-            isJumping = false;
-            transform.position = new Vector3(
-                transform.position.x,
-                isOnFloor ? floorY : ceilingY,
-                0f
-            );
+            DestructibleBox box = other.GetComponent<DestructibleBox>()
+                               ?? other.GetComponentInParent<DestructibleBox>();
+            box?.HandlePlayerContact();
+        }
+        else
+        {
+            TuneTrigger tt = other.GetComponent<TuneTrigger>();
+            if (tt != null)
+            {
+                if (tt.triggerType == TuneTrigger.TriggerType.Entry)
+                    EnterTuneSection();
+                else if (tt.triggerType == TuneTrigger.TriggerType.Exit)
+                    ExitTuneSection();
+            }
         }
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        Debug.Log("Colisión con: " + collision.gameObject.tag);
-
         if (collision.gameObject.CompareTag("Obstacle"))
             HandleObstacleHit();
     }
@@ -162,14 +209,12 @@ public class PlayerController : MonoBehaviour
     {
         GameManager.Instance.AddCoin();
         AudioManager.Instance?.PlayCoinCollect();
-
         if (coinPickupParticles)
         {
             var ps = Instantiate(coinPickupParticles, coin.transform.position, Quaternion.identity);
             ps.Play();
             Destroy(ps.gameObject, 2f);
         }
-
         coin.SetActive(false);
         Destroy(coin, 0.1f);
     }
@@ -182,22 +227,9 @@ public class PlayerController : MonoBehaviour
             ps.Play();
             Destroy(ps.gameObject, 3f);
         }
-
         AudioManager.Instance?.PlayDeath();
         GameManager.Instance.TriggerGameOver();
         gameObject.SetActive(false);
-    }
-
-    void HandleWallContact()
-    {
-        // Si toca la pared, forzar al jugador de vuelta a su carril
-        if (isOnFloor)
-            transform.position = new Vector3(transform.position.x, floorY, 0f);
-        else
-            transform.position = new Vector3(transform.position.x, ceilingY, 0f);
-        
-        // Cancelar cualquier salto en progreso
-        isJumping = false;
     }
 
     public bool IsOnFloor() => isOnFloor;

@@ -1,11 +1,6 @@
 using UnityEngine;
 using TMPro;
 
-/// <summary>
-/// Caja destructible que requiere monedas para ser destruida.
-/// Bloquea físicamente el paso del jugador hasta ser destruida.
-/// Solo responde a golpes en modo propulsión.
-/// </summary>
 public class DestructibleBox : MonoBehaviour
 {
     [Header("Configuración")]
@@ -27,62 +22,26 @@ public class DestructibleBox : MonoBehaviour
     public float shakeIntensity = 0.1f;
     public float shakeDuration = 0.15f;
 
-    // Estado
     private int remainingCoins;
     private Vector3 originalLocalPos;
     private bool isShaking = false;
     private float shakeTimer = 0f;
     private TuneSection parentSection;
 
-    // Collider sólido que bloquea al jugador
-    private Collider solidCollider;
-    // Collider trigger para detectar cuando el jugador lo toca
-    private Collider triggerCollider;
-
     void Awake()
     {
         originalLocalPos = transform.localPosition;
-        parentSection = GetComponentInParent<TuneSection>();
-        SetupColliders();
     }
 
-    void SetupColliders()
+    public void SetParentSection(TuneSection section)
     {
-        // Busca el BoxCollider existente y conviértelo en SÓLIDO (no trigger)
-        // para que bloquee físicamente al jugador
-        BoxCollider[] cols = GetComponents<BoxCollider>();
-
-        if (cols.Length == 0)
-        {
-            // Crear collider sólido
-            BoxCollider solid = gameObject.AddComponent<BoxCollider>();
-            solid.isTrigger = false;
-            solidCollider = solid;
-
-            // Crear collider trigger (un poco más grande) para detectar contacto
-            BoxCollider trigger = gameObject.AddComponent<BoxCollider>();
-            trigger.isTrigger = true;
-            trigger.size = Vector3.one * 1.2f;
-            triggerCollider = trigger;
-        }
-        else
-        {
-            // Usar el existente como sólido
-            cols[0].isTrigger = false;
-            solidCollider = cols[0];
-
-            // Agregar trigger encima
-            BoxCollider trigger = gameObject.AddComponent<BoxCollider>();
-            trigger.isTrigger = true;
-            trigger.size = Vector3.one * 1.2f;
-            triggerCollider = trigger;
-        }
+        parentSection = section;
     }
 
     public void Initialize(int coinCost)
     {
-        requiredCoins = coinCost;
-        remainingCoins = coinCost;
+        requiredCoins = Mathf.Max(1, coinCost);
+        remainingCoins = requiredCoins;
         UpdateVisuals();
     }
 
@@ -98,7 +57,6 @@ public class DestructibleBox : MonoBehaviour
     void Update()
     {
         if (!isShaking) return;
-
         shakeTimer -= Time.deltaTime;
         if (shakeTimer > 0f)
         {
@@ -113,32 +71,12 @@ public class DestructibleBox : MonoBehaviour
         }
     }
 
-    // ── Detección de contacto ─────────────────────────
-
-    void OnTriggerEnter(Collider other)
-    {
-        if (!other.CompareTag("Player")) return;
-        HandlePlayerContact();
-    }
-
-    void OnTriggerStay(Collider other)
-    {
-        // Por si el jugador queda pegado, seguir procesando
-        if (!other.CompareTag("Player")) return;
-    }
-
-    void OnCollisionEnter(Collision collision)
-    {
-        if (!collision.gameObject.CompareTag("Player")) return;
-        HandlePlayerContact();
-    }
-
-    void HandlePlayerContact()
+    /// <summary>Llamado desde PlayerController cuando toca esta caja.</summary>
+    public void HandlePlayerContact()
     {
         if (!GameManager.Instance.IsPropulsionActive)
         {
-            // Sin propulsión = Game Over
-            Debug.Log("[Box] Sin propulsión → Game Over");
+            Debug.Log("[Box] Jugador sin propulsión → Game Over");
             GameManager.Instance.TriggerGameOver();
             return;
         }
@@ -146,9 +84,7 @@ public class DestructibleBox : MonoBehaviour
         TakeHit();
     }
 
-    // ── Lógica de golpes ─────────────────────────────
-
-    public void TakeHit()
+    void TakeHit()
     {
         int coinsToSpend = Mathf.Min(coinsPerHit, remainingCoins);
 
@@ -162,13 +98,9 @@ public class DestructibleBox : MonoBehaviour
         GameManager.Instance.SpendCoins(coinsToSpend);
         remainingCoins -= coinsToSpend;
 
-        if (AudioManager.Instance != null)
-            AudioManager.Instance.PlayBoxHit();
-
+        AudioManager.Instance?.PlayBoxHit();
         TriggerShake();
-
         if (hitParticles) hitParticles.Play();
-
         UpdateVisuals();
 
         if (remainingCoins <= 0)
@@ -177,8 +109,7 @@ public class DestructibleBox : MonoBehaviour
 
     void DestroyBox()
     {
-        if (AudioManager.Instance != null)
-            AudioManager.Instance.PlayBoxDestroy();
+        AudioManager.Instance?.PlayBoxDestroy();
 
         if (destroyParticles)
         {
@@ -191,17 +122,12 @@ public class DestructibleBox : MonoBehaviour
         Destroy(gameObject);
     }
 
-    // ── Visuales ─────────────────────────────────────
-
     void UpdateVisuals()
     {
-        if (costLabel)
-            costLabel.text = remainingCoins.ToString();
-
+        if (costLabel) costLabel.text = remainingCoins.ToString();
         if (boxMeshRenderer == null) return;
 
         float ratio = requiredCoins > 0 ? (float)remainingCoins / requiredCoins : 1f;
-
         if (ratio > 0.5f && intactMaterial)
             boxMeshRenderer.material = intactMaterial;
         else if (ratio > 0.25f && damagedMaterial)
@@ -216,7 +142,4 @@ public class DestructibleBox : MonoBehaviour
         shakeTimer = shakeDuration;
         transform.localPosition = originalLocalPos;
     }
-
-    public int GetRemainingCoins() => remainingCoins;
-    public int GetRequiredCoins() => requiredCoins;
 }

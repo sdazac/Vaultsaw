@@ -1,68 +1,93 @@
 using UnityEngine;
 
 /// <summary>
-/// Cámara en perspectiva con vista lateral (2.5D).
-/// Sigue al jugador en X con suavizado, Y e Z son fijas.
+/// Cámara lateral 2.5D que sigue al jugador en X.
+/// Hace zoom dinámico: más cerca en juego normal, aún más cerca en TuneSection.
 /// </summary>
 public class CameraController : MonoBehaviour
 {
-    [Header("Objetivo")]
+    [Header("Target")]
     public Transform target;
-    public Vector3 offset = new Vector3(0f, 0f, -15f);
+    public float leadOffset = 3f;  // cuánto adelanta la cámara al jugador en X
 
-    [Header("Suavizado")]
-    public float smoothSpeed = 8f;
-    public float leadOffset = 3f;   // La cámara mira un poco adelante del jugador
+    [Header("Posición Z (zoom)")]
+    public float normalZ      = -10f;   // Z en juego normal (más cerca que -15)
+    public float tuneSectionZ = -6f;    // Z en TuneSection (aún más cerca)
+    public float zoomSpeed    = 3f;     // velocidad de transición entre zooms
 
-    [Header("Límites Y (sacudida de muerte)")]
-    public float deathShakeMagnitude = 0.4f;
-    public float deathShakeDuration = 0.6f;
+    [Header("Posición Y fija")]
+    public float normalY      = 0f;     // Y centrado entre piso y techo
+    public float tuneSectionY = 0f;     // Y centrado entre midfloors (ajusta si difiere)
 
+    [Header("Suavizado X")]
+    public float smoothSpeed  = 8f;
+
+    // Estado interno
+    private float targetZ;
+    private float targetY;
     private Vector3 velocity = Vector3.zero;
-    private bool isShaking = false;
+    private PlayerController player;
+
+    void Start()
+    {
+        player  = FindFirstObjectByType<PlayerController>();
+        targetZ = normalZ;
+        targetY = normalY;
+
+        // Posición inicial
+        if (target != null)
+            transform.position = new Vector3(target.position.x + leadOffset, normalY, normalZ);
+    }
 
     void LateUpdate()
     {
         if (target == null) return;
 
-        Vector3 desiredPos = new Vector3(
-            target.position.x + leadOffset + offset.x,
-            offset.y,
-            offset.z
+        // Detectar si el jugador está en TuneSection
+        bool inTune = player != null && player.InTuneSection;
+
+        targetZ = inTune ? tuneSectionZ : normalZ;
+        targetY = inTune ? tuneSectionY : normalY;
+
+        // Posición deseada
+        Vector3 desired = new Vector3(
+            target.position.x + leadOffset,
+            targetY,
+            targetZ
         );
 
-        transform.position = Vector3.SmoothDamp(
-            transform.position,
-            desiredPos,
-            ref velocity,
-            1f / smoothSpeed
-        );
+        // Suavizar X con SmoothDamp
+        Vector3 current = transform.position;
+        float newX = Mathf.SmoothDamp(current.x, desired.x, ref velocity.x, 1f / smoothSpeed);
+
+        // Suavizar Y y Z con Lerp
+        float newY = Mathf.Lerp(current.y, desired.y, zoomSpeed * Time.deltaTime);
+        float newZ = Mathf.Lerp(current.z, desired.z, zoomSpeed * Time.deltaTime);
+
+        transform.position = new Vector3(newX, newY, newZ);
     }
 
     public void TriggerDeathShake()
     {
-        if (!isShaking)
-            StartCoroutine(DeathShake());
+        StartCoroutine(DeathShake());
     }
 
     System.Collections.IEnumerator DeathShake()
     {
-        isShaking = true;
         Vector3 originalPos = transform.position;
         float elapsed = 0f;
+        float duration = 0.6f;
+        float magnitude = 0.3f;
 
-        while (elapsed < deathShakeDuration)
+        while (elapsed < duration)
         {
-            float t = elapsed / deathShakeDuration;
-            float magnitude = deathShakeMagnitude * (1f - t);
-            Vector3 shake = (Vector3)Random.insideUnitCircle * magnitude;
+            float t = elapsed / duration;
+            Vector3 shake = (Vector3)Random.insideUnitCircle * magnitude * (1f - t);
             shake.z = 0f;
             transform.position = originalPos + shake;
             elapsed += Time.deltaTime;
             yield return null;
         }
-
         transform.position = originalPos;
-        isShaking = false;
     }
 }
