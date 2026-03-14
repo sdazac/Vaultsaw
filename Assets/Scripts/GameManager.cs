@@ -23,11 +23,6 @@ public class GameManager : MonoBehaviour
 
     private const string HIGH_SCORE_KEY = "HighScore";
 
-    void Start()
-    {
-        StartGame(); // ← agrega esta línea temporal
-    }
-
     void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -95,6 +90,7 @@ public class GameManager : MonoBehaviour
 
     public void RestartGame()
     {
+        StartGame(); // Resetear estado del juego
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }

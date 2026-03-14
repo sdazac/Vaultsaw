@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using TMPro;
 using System.Collections;
 
@@ -24,9 +25,9 @@ public class UIManager : MonoBehaviour
     public float coinShakeMagnitude = 8f;
     public float coinShakeDuration = 0.3f;
 
-    [Header("Pantalla de Inicio")]
-    public GameObject startScreen;
-    public Button startButton;
+    [Header("Main Menu")]
+    public GameObject mainMenuPanel;
+    public Button playButton;
 
     [Header("Game Over")]
     public GameObject gameOverScreen;
@@ -71,12 +72,19 @@ public class UIManager : MonoBehaviour
         GameManager.Instance.OnPropulsionToggled += UpdatePropulsionUI;
 
         // Botones
-        if (startButton) startButton.onClick.AddListener(OnStartPressed);
+        if (playButton) playButton.onClick.AddListener(OnStartPressed);
         if (restartButton) restartButton.onClick.AddListener(OnRestartPressed);
         if (mainMenuButton) mainMenuButton.onClick.AddListener(OnMainMenuPressed);
 
-        // Estado inicial
-        ShowStartScreen();
+        // Estado inicial - solo mostrar menú principal si el juego no está en progreso
+        if (!GameManager.Instance.IsPlaying)
+        {
+            ShowMainMenu();
+        }
+        else
+        {
+            OnGameStart(); // Si el juego ya está en progreso, activar HUD
+        }
     }
 
     void Update()
@@ -88,17 +96,17 @@ public class UIManager : MonoBehaviour
 
         if (player.PropulsionOnCooldown)
         {
-            propulsionCooldownText.text  = $"⚡ {player.PropulsionCooldownRemaining:F1}s";
+            propulsionCooldownText.text  = $"{player.PropulsionCooldownRemaining:F1}s";
             propulsionCooldownText.color = Color.red;
         }
         else if (GameManager.Instance.IsPropulsionActive)
         {
-            propulsionCooldownText.text  = "⚡ ACTIVA";
+            propulsionCooldownText.text  = "ACTIVE";
             propulsionCooldownText.color = Color.cyan;
         }
         else
         {
-            propulsionCooldownText.text  = "⚡ LISTA";
+            propulsionCooldownText.text  = "READY";
             propulsionCooldownText.color = Color.green;
         }
     }
@@ -119,16 +127,16 @@ public class UIManager : MonoBehaviour
     //  PANTALLAS
     // ────────────────────────────────────────────────
 
-    void ShowStartScreen()
+    void ShowMainMenu()
     {
-        if (startScreen) startScreen.SetActive(true);
+        if (mainMenuPanel) mainMenuPanel.SetActive(true);
         if (hudPanel) hudPanel.SetActive(false);
         if (gameOverScreen) gameOverScreen.SetActive(false);
     }
 
     void OnGameStart()
     {
-        if (startScreen) startScreen.SetActive(false);
+        if (mainMenuPanel) mainMenuPanel.SetActive(false);
         if (hudPanel) hudPanel.SetActive(true);
         if (gameOverScreen) gameOverScreen.SetActive(false);
         UpdateCoinsUI(0);
@@ -145,9 +153,10 @@ public class UIManager : MonoBehaviour
     {
         yield return new WaitForSeconds(0.5f);
 
+        if (hudPanel) hudPanel.SetActive(false);
         if (gameOverScreen) gameOverScreen.SetActive(true);
-        if (finalScoreText) finalScoreText.text = $"Puntuación: {GameManager.Instance.Score}";
-        if (highScoreText) highScoreText.text = $"Récord: {GameManager.Instance.HighScore}";
+        if (finalScoreText) finalScoreText.text = $"Score: {GameManager.Instance.Score}";
+        if (highScoreText) highScoreText.text = $"High Score: {GameManager.Instance.HighScore}";
 
         bool isNewRecord = GameManager.Instance.Score >= GameManager.Instance.HighScore
                            && GameManager.Instance.Score > 0;
@@ -173,7 +182,7 @@ public class UIManager : MonoBehaviour
 
     void UpdateCoinsUI(int coins)
     {
-        if (coinCountText) coinCountText.text = coins.ToString();
+        if (coinCountText) coinCountText.text = "Coins: " + coins.ToString();
         if (coinShakeCoroutine != null) StopCoroutine(coinShakeCoroutine);
         if (coinIconRect) coinShakeCoroutine = StartCoroutine(ShakeCoinIcon());
     }
@@ -181,7 +190,7 @@ public class UIManager : MonoBehaviour
     void UpdateScoreUI(int score)
     {
         targetScore = score;
-        if (scoreText) scoreText.text = score.ToString("N0");
+        if (scoreText) scoreText.text = "Score: " + score.ToString("N0");
         if (scorePopCoroutine != null) StopCoroutine(scorePopCoroutine);
         if (scoreText) scorePopCoroutine = StartCoroutine(PopScore());
     }
@@ -264,6 +273,6 @@ public class UIManager : MonoBehaviour
 
     void OnMainMenuPressed()
     {
-        GameManager.Instance.RestartGame(); // En un proyecto real iría a la escena de menú
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }
