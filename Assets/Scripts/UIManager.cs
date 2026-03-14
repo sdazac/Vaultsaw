@@ -37,6 +37,9 @@ public class UIManager : MonoBehaviour
     public Button mainMenuButton;
     public CanvasGroup gameOverCanvasGroup;    // Para fade-in
 
+    [Header("Propulsión Cooldown")]
+    public TextMeshProUGUI propulsionCooldownText;
+
     [Header("Advertencia de Caja")]
     public GameObject boxWarningPanel;         // Panel "¡ZONA DE DESTRUCCIÓN!" 
     public TextMeshProUGUI boxWarningText;
@@ -74,6 +77,30 @@ public class UIManager : MonoBehaviour
 
         // Estado inicial
         ShowStartScreen();
+    }
+
+    void Update()
+    {
+        if (propulsionCooldownText == null) return;
+
+        PlayerController player = FindFirstObjectByType<PlayerController>();
+        if (player == null) return;
+
+        if (player.PropulsionOnCooldown)
+        {
+            propulsionCooldownText.text  = $"⚡ {player.PropulsionCooldownRemaining:F1}s";
+            propulsionCooldownText.color = Color.red;
+        }
+        else if (GameManager.Instance.IsPropulsionActive)
+        {
+            propulsionCooldownText.text  = "⚡ ACTIVA";
+            propulsionCooldownText.color = Color.cyan;
+        }
+        else
+        {
+            propulsionCooldownText.text  = "⚡ LISTA";
+            propulsionCooldownText.color = Color.green;
+        }
     }
 
     void OnDestroy()

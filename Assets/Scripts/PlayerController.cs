@@ -30,6 +30,23 @@ public class PlayerController : MonoBehaviour
     public ParticleSystem deathParticles;
     public ParticleSystem propulsionTrail;
 
+    [Header("Propulsión")]
+    public float propulsionDuration     = 2f;   // segundos activa
+    public float propulsionCooldown     = 8f;   // segundos de cooldown
+    private float propulsionStartTime   = -99f;
+    private float propulsionOffTime     = -99f;
+
+    // Propiedades públicas para la UI
+    public bool PropulsionOnCooldown => 
+        !GameManager.Instance.IsPropulsionActive && 
+        Time.time - propulsionOffTime < propulsionCooldown;
+
+    public float PropulsionCooldownRemaining => 
+        Mathf.Max(0f, propulsionCooldown - (Time.time - propulsionOffTime));
+
+    public float PropulsionDurationRemaining =>
+        Mathf.Max(0f, propulsionDuration - (Time.time - propulsionStartTime));
+
     private Rigidbody rb;
     private bool isOnFloor     = true;
     private bool inTuneSection = false;
@@ -68,6 +85,12 @@ public class PlayerController : MonoBehaviour
         HandleJumpInput();
         HandlePropulsionInput();
         RotateSaw();
+
+        if (GameManager.Instance.IsPropulsionActive)
+        {
+            if (Time.time - propulsionStartTime >= propulsionDuration)
+                DeactivatePropulsion();
+        }
 
         // Solo forzar Z=0 en Update, no tocar Y
         Vector3 pos = transform.position;
@@ -122,16 +145,32 @@ public class PlayerController : MonoBehaviour
 
     public void TogglePropulsion()
     {
+        if (PropulsionOnCooldown) return;
+
         bool newState = !GameManager.Instance.IsPropulsionActive;
-        GameManager.Instance.SetPropulsion(newState);
-        if (meshRenderer)
-            meshRenderer.material = newState ? propulsionMaterial : normalMaterial;
-        if (propulsionTrail)
+
+        // Si ya está activa, desactivar manualmente
+        if (!newState)
         {
-            if (newState) propulsionTrail.Play();
-            else propulsionTrail.Stop();
+            DeactivatePropulsion();
+            return;
         }
-        AudioManager.Instance?.PlayPropulsionToggle(newState);
+
+        // Activar
+        propulsionStartTime = Time.time;
+        GameManager.Instance.SetPropulsion(true);
+        if (meshRenderer) meshRenderer.material = propulsionMaterial;
+        if (propulsionTrail) propulsionTrail.Play();
+        AudioManager.Instance?.PlayPropulsionToggle(true);
+    }
+
+    void DeactivatePropulsion()
+    {
+        propulsionOffTime = Time.time;
+        GameManager.Instance.SetPropulsion(false);
+        if (meshRenderer) meshRenderer.material = normalMaterial;
+        if (propulsionTrail) propulsionTrail.Stop();
+        AudioManager.Instance?.PlayPropulsionToggle(false);
     }
 
     public void EnterTuneSection()
