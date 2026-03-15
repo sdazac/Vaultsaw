@@ -29,6 +29,16 @@ public class ChunkBuilder : MonoBehaviour
 
     void ConfigureWalls()
     {
+        // Si no hay referencias, buscar automáticamente en los hijos
+        if (floorTransform == null)
+            floorTransform = transform.Find("Floor");
+        if (ceilingTransform == null)
+            ceilingTransform = transform.Find("Ceiling");
+        if (leftWall == null)
+            leftWall = transform.Find("LeftWall");
+        if (rightWall == null)
+            rightWall = transform.Find("RightWall");
+
         // Piso
         if (floorTransform)
         {

@@ -813,6 +813,7 @@ GameObject:
   m_Component:
   - component: {fileID: 295881884214306237}
   - component: {fileID: 3709221066193832630}
+  - component: {fileID: 3999400986446959874}
   m_Layer: 0
   m_Name: TuneSection
   m_TagString: Untagged
@@ -865,8 +866,32 @@ MonoBehaviour:
   - {fileID: 2743248447332637118}
   - {fileID: 8375905735147302003}
   boxY: 0
+  entryTriggerLocalX: 2
+  exitTriggerLocalX: 18
+  triggerHeight: 6
   warningSignPrefab: {fileID: 7406481062133768546}
   warningOffsetX: -8
+--- !u!114 &3999400986446959874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6641806115369957505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 714fc37cfdbf71f41b148d541f424dfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChunkBuilder
+  width: 20
+  height: 6
+  wallThickness: 0.5
+  floorTransform: {fileID: 0}
+  ceilingTransform: {fileID: 0}
+  leftWall: {fileID: 0}
+  rightWall: {fileID: 0}
+  floorMaterial: {fileID: 2100000, guid: 66f972439bf988e4fae2c185168d32e9, type: 2}
+  wallMaterial: {fileID: 0}
 --- !u!1 &6821782768122131681
 GameObject:
   m_ObjectHideFlags: 0

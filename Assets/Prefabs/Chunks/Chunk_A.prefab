@@ -54,7 +54,7 @@ MonoBehaviour:
   ceilingTransform: {fileID: 0}
   leftWall: {fileID: 0}
   rightWall: {fileID: 0}
-  floorMaterial: {fileID: 0}
+  floorMaterial: {fileID: 2100000, guid: 66f972439bf988e4fae2c185168d32e9, type: 2}
   wallMaterial: {fileID: 0}
 --- !u!1 &1610219275813091435
 GameObject:

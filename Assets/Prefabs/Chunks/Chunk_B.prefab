@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8684702381140630675}
+  - component: {fileID: 8466302296109638506}
   m_Layer: 0
   m_Name: Chunk_B
   m_TagString: Untagged
@@ -34,6 +35,27 @@ Transform:
   - {fileID: 5303995245849293663}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8466302296109638506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2660228511720446994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 714fc37cfdbf71f41b148d541f424dfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChunkBuilder
+  width: 20
+  height: 6
+  wallThickness: 0.5
+  floorTransform: {fileID: 0}
+  ceilingTransform: {fileID: 0}
+  leftWall: {fileID: 0}
+  rightWall: {fileID: 0}
+  floorMaterial: {fileID: 2100000, guid: 66f972439bf988e4fae2c185168d32e9, type: 2}
+  wallMaterial: {fileID: 0}
 --- !u!1 &3155447965071370323
 GameObject:
   m_ObjectHideFlags: 0
