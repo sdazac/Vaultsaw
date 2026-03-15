@@ -77,11 +77,32 @@ public class DestructibleBox : MonoBehaviour
         if (!GameManager.Instance.IsPropulsionActive)
         {
             Debug.Log("[Box] Jugador sin propulsión → Game Over");
-            GameManager.Instance.TriggerGameOver();
+            HandlePlayerDeath();
             return;
         }
 
         TakeHit();
+    }
+
+    void HandlePlayerDeath()
+    {
+        // Obtener referencia al jugador
+        PlayerController player = FindFirstObjectByType<PlayerController>();
+        
+        if (player != null)
+        {
+            // Reproducir efectos de muerte
+            if (player.deathParticles)
+            {
+                var ps = Instantiate(player.deathParticles, player.transform.position, Quaternion.identity);
+                ps.Play();
+                Destroy(ps.gameObject, 3f);
+            }
+            AudioManager.Instance?.PlayDeath();
+            player.gameObject.SetActive(false);
+        }
+        
+        GameManager.Instance.TriggerGameOver();
     }
 
     void TakeHit()

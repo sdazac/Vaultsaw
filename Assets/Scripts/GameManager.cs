@@ -33,6 +33,10 @@ public class GameManager : MonoBehaviour
 
     public void StartGame()
     {
+        // Resetear Time.timeScale por si estaba en slow motion
+        Time.timeScale = 1f;
+        Time.fixedDeltaTime = 0.02f;
+
         IsPlaying = true;
         Score = 0;
         Coins = 0;
