@@ -86,25 +86,28 @@ public class DestructibleBox : MonoBehaviour
 
     void TakeHit()
     {
-        int coinsToSpend = Mathf.Min(coinsPerHit, remainingCoins);
+        Debug.Log("[Box] TakeHit - Monedas disponibles: " + GameManager.Instance.Coins + 
+                  ", Costo de caja: " + requiredCoins);
 
-        if (GameManager.Instance.Coins <= 0)
+        // Verificar si tienes suficientes monedas para pagar TODO el costo de la caja
+        if (GameManager.Instance.Coins < requiredCoins)
         {
-            Debug.Log("[Box] Sin monedas → Game Over");
+            Debug.Log("[Box] Monedas insuficientes (" + GameManager.Instance.Coins + " < " + requiredCoins + ") → Game Over");
             GameManager.Instance.TriggerGameOver();
             return;
         }
 
-        GameManager.Instance.SpendCoins(coinsToSpend);
-        remainingCoins -= coinsToSpend;
+        // Restar el costo TOTAL de la caja de una vez
+        GameManager.Instance.SpendCoins(requiredCoins);
+        
+        Debug.Log("[Box] Monedas restadas. Nuevo total: " + GameManager.Instance.Coins);
 
         AudioManager.Instance?.PlayBoxHit();
         TriggerShake();
         if (hitParticles) hitParticles.Play();
-        UpdateVisuals();
-
-        if (remainingCoins <= 0)
-            DestroyBox();
+        
+        // Destruir la caja inmediatamente
+        DestroyBox();
     }
 
     void DestroyBox()
@@ -118,7 +121,9 @@ public class DestructibleBox : MonoBehaviour
             Destroy(ps.gameObject, 3f);
         }
 
+        Debug.Log("[Box] Destruida - Sumando 50 puntos. Score actual: " + GameManager.Instance.Score);
         GameManager.Instance.AddScore(50);
+        Debug.Log("[Box] Score después de AddScore: " + GameManager.Instance.Score);
 
         parentSection?.OnBoxDestroyed(this);
         Destroy(gameObject);
