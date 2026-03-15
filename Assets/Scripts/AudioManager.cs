@@ -12,6 +12,7 @@ public class AudioManager : MonoBehaviour
     [Header("Música")]
     public AudioSource musicSource;
     public AudioClip backgroundMusic;
+    public AudioClip mainMenuMusic;
     [Range(0f, 1f)] public float musicVolume = 0.4f;
 
     [Header("SFX - Clips")]
@@ -22,6 +23,7 @@ public class AudioManager : MonoBehaviour
     public AudioClip boxHitClip;
     public AudioClip boxDestroyClip;
     public AudioClip deathClip;
+    public AudioClip newHighScoreClip;
     public AudioClip sectionClearedClip;
 
     [Header("SFX - Volúmenes")]
@@ -48,9 +50,9 @@ public class AudioManager : MonoBehaviour
 
     void Start()
     {
-        PlayMusic();
-        // Suscribirse para iniciar/detener música
-        GameManager.Instance.OnGameStart += PlayMusic;
+        PlayMainMenuMusic();
+        // Suscribirse para cambiar música al iniciar/terminar juego
+        GameManager.Instance.OnGameStart += PlayGameplayMusic;
         GameManager.Instance.OnGameOver += OnGameOver;
     }
 
@@ -58,7 +60,7 @@ public class AudioManager : MonoBehaviour
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.OnGameStart -= PlayMusic;
+            GameManager.Instance.OnGameStart -= PlayGameplayMusic;
             GameManager.Instance.OnGameOver -= OnGameOver;
         }
     }
@@ -67,7 +69,21 @@ public class AudioManager : MonoBehaviour
     //  MÚSICA
     // ────────────────────────────────────────────────
 
-    void PlayMusic()
+    void PlayMainMenuMusic()
+    {
+        if (mainMenuMusic != null)
+        {
+            musicSource.clip = mainMenuMusic;
+            musicSource.volume = musicVolume;
+            musicSource.Play();
+        }
+        else
+        {
+            Debug.Log("[AudioManager] No hay música de menú asignada. Asigna un AudioClip en Inspector.");
+        }
+    }
+
+    void PlayGameplayMusic()
     {
         if (backgroundMusic != null)
         {
@@ -77,7 +93,7 @@ public class AudioManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("[AudioManager] No hay música asignada. Asigna un AudioClip en el Inspector.");
+            Debug.Log("[AudioManager] No hay música de gameplay asignada. Asigna un AudioClip en Inspector.");
         }
     }
 
@@ -124,6 +140,9 @@ public class AudioManager : MonoBehaviour
 
     public void PlaySectionCleared()
         => PlayClip(sectionClearedClip, sfxVolume);
+
+    public void PlayNewHighScore()
+        => PlayClip(newHighScoreClip, sfxVolume);
 
     void PlayClip(AudioClip clip, float volume, float pitch = 1f)
     {

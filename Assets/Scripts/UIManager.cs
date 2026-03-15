@@ -162,6 +162,12 @@ public class UIManager : MonoBehaviour
                            && GameManager.Instance.Score > 0;
         if (newHighScoreLabel) newHighScoreLabel.gameObject.SetActive(isNewRecord);
 
+        // Reproducir sonido de nuevo record si aplica
+        if (isNewRecord)
+        {
+            AudioManager.Instance?.PlayNewHighScore();
+        }
+
         // Fade in
         if (gameOverCanvasGroup != null)
         {
