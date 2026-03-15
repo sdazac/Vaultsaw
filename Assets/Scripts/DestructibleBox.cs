@@ -118,6 +118,8 @@ public class DestructibleBox : MonoBehaviour
             Destroy(ps.gameObject, 3f);
         }
 
+        GameManager.Instance.AddScore(50);
+
         parentSection?.OnBoxDestroyed(this);
         Destroy(gameObject);
     }

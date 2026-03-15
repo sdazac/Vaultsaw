@@ -88,6 +88,15 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void AddScore(int points)
+    {
+        if (points > 0)
+        {
+            Score += points;
+            OnScoreChanged?.Invoke(Score);
+        }
+    }
+
     public void RestartGame()
     {
         StartGame(); // Resetear estado del juego
