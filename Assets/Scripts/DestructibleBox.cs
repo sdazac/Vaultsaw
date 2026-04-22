@@ -5,13 +5,11 @@ public class DestructibleBox : MonoBehaviour
 {
     [Header("Configuración")]
     public int requiredCoins = 10;
-    public int coinsPerHit = 1;
+    public int hitsToDestroy = 3;       // ← golpes necesarios para destruir
 
     [Header("Visuales")]
     public MeshRenderer boxMeshRenderer;
-    public Material intactMaterial;
-    public Material damagedMaterial;
-    public Material criticalMaterial;
+    public Material crackMaterial;      // ← solo un material con el shader
     public TextMeshPro costLabel;
 
     [Header("Efectos")]
@@ -20,13 +18,15 @@ public class DestructibleBox : MonoBehaviour
 
     [Header("Shake")]
     public float shakeIntensity = 0.1f;
-    public float shakeDuration = 0.15f;
+    public float shakeDuration  = 0.15f;
 
-    private int remainingCoins;
+    private int    remainingCoins;
+    private int    hitsReceived  = 0;
     private Vector3 originalLocalPos;
-    private bool isShaking = false;
-    private float shakeTimer = 0f;
+    private bool   isShaking    = false;
+    private float  shakeTimer   = 0f;
     private TuneSection parentSection;
+    private Material instanceMat; // material de instancia para no afectar otros
 
     void Awake()
     {
@@ -40,9 +40,18 @@ public class DestructibleBox : MonoBehaviour
 
     public void Initialize(int coinCost)
     {
-        requiredCoins = Mathf.Max(1, coinCost);
+        requiredCoins  = Mathf.Max(1, coinCost);
         remainingCoins = requiredCoins;
-        UpdateVisuals();
+
+        // Crea instancia del material para que cada caja sea independiente
+        if (boxMeshRenderer && crackMaterial)
+        {
+            instanceMat = new Material(crackMaterial);
+            boxMeshRenderer.material = instanceMat;
+        }
+
+        UpdateShader();
+        UpdateLabel();
     }
 
     void Start()
@@ -50,7 +59,8 @@ public class DestructibleBox : MonoBehaviour
         if (remainingCoins == 0)
         {
             remainingCoins = requiredCoins;
-            UpdateVisuals();
+            UpdateShader();
+            UpdateLabel();
         }
     }
 
@@ -71,7 +81,6 @@ public class DestructibleBox : MonoBehaviour
         }
     }
 
-    /// <summary>Llamado desde PlayerController cuando toca esta caja.</summary>
     public void HandlePlayerContact()
     {
         if (!GameManager.Instance.IsPropulsionActive)
@@ -86,12 +95,9 @@ public class DestructibleBox : MonoBehaviour
 
     void HandlePlayerDeath()
     {
-        // Obtener referencia al jugador
         PlayerController player = FindFirstObjectByType<PlayerController>();
-        
         if (player != null)
         {
-            // Reproducir efectos de muerte
             if (player.deathParticles)
             {
                 var ps = Instantiate(player.deathParticles, player.transform.position, Quaternion.identity);
@@ -101,34 +107,57 @@ public class DestructibleBox : MonoBehaviour
             AudioManager.Instance?.PlayDeath();
             player.gameObject.SetActive(false);
         }
-        
         GameManager.Instance.TriggerGameOver();
     }
 
     void TakeHit()
     {
-        Debug.Log("[Box] TakeHit - Monedas disponibles: " + GameManager.Instance.Coins + 
-                  ", Costo de caja: " + requiredCoins);
+        int costPerHit = Mathf.CeilToInt(requiredCoins / (float)hitsToDestroy);
 
-        // Verificar si tienes suficientes monedas para pagar TODO el costo de la caja
-        if (GameManager.Instance.Coins < requiredCoins)
+        if (GameManager.Instance.Coins < costPerHit)
         {
-            Debug.Log("[Box] Monedas insuficientes (" + GameManager.Instance.Coins + " < " + requiredCoins + ") → Game Over");
+            Debug.Log("[Box] Monedas insuficientes → Game Over");
             GameManager.Instance.TriggerGameOver();
             return;
         }
 
-        // Restar el costo TOTAL de la caja de una vez
-        GameManager.Instance.SpendCoins(requiredCoins);
-        
-        Debug.Log("[Box] Monedas restadas. Nuevo total: " + GameManager.Instance.Coins);
+        // Resta monedas por golpe
+        GameManager.Instance.SpendCoins(costPerHit);
+        remainingCoins -= costPerHit;
+        hitsReceived++;
 
         AudioManager.Instance?.PlayBoxHit();
         TriggerShake();
         if (hitParticles) hitParticles.Play();
-        
-        // Destruir la caja inmediatamente
-        DestroyBox();
+
+        // Actualiza el shader con el nuevo nivel de daño
+        UpdateShader();
+        UpdateLabel();
+
+        Debug.Log($"[Box] Golpe {hitsReceived}/{hitsToDestroy} — Daño: {GetDamageRatio():F2}");
+
+        // Destruye cuando recibe todos los golpes
+        if (hitsReceived >= hitsToDestroy)
+            DestroyBox();
+    }
+
+    float GetDamageRatio()
+    {
+        return (float)hitsReceived / hitsToDestroy;
+    }
+
+    void UpdateShader()
+    {
+        if (instanceMat == null) return;
+
+        // Actualiza el parámetro _Damage del shader (0=sano, 1=destruido)
+        float damage = GetDamageRatio();
+        instanceMat.SetFloat("_Damage", damage);
+    }
+
+    void UpdateLabel()
+    {
+        if (costLabel) costLabel.text = remainingCoins.ToString();
     }
 
     void DestroyBox()
@@ -142,31 +171,14 @@ public class DestructibleBox : MonoBehaviour
             Destroy(ps.gameObject, 3f);
         }
 
-        Debug.Log("[Box] Destruida - Sumando 50 puntos. Score actual: " + GameManager.Instance.Score);
         GameManager.Instance.AddScore(50);
-        Debug.Log("[Box] Score después de AddScore: " + GameManager.Instance.Score);
-
         parentSection?.OnBoxDestroyed(this);
         Destroy(gameObject);
     }
 
-    void UpdateVisuals()
-    {
-        if (costLabel) costLabel.text = remainingCoins.ToString();
-        if (boxMeshRenderer == null) return;
-
-        float ratio = requiredCoins > 0 ? (float)remainingCoins / requiredCoins : 1f;
-        if (ratio > 0.5f && intactMaterial)
-            boxMeshRenderer.material = intactMaterial;
-        else if (ratio > 0.25f && damagedMaterial)
-            boxMeshRenderer.material = damagedMaterial;
-        else if (criticalMaterial)
-            boxMeshRenderer.material = criticalMaterial;
-    }
-
     void TriggerShake()
     {
-        isShaking = true;
+        isShaking  = true;
         shakeTimer = shakeDuration;
         transform.localPosition = originalLocalPos;
     }

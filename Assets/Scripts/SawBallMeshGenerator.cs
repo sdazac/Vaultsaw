@@ -19,6 +19,8 @@ public class SawBallMeshGenerator : MonoBehaviour
     [Header("Profundidad 3D")]
     public float depth = 0.2f;           // Grosor del disco (eje Z)
 
+private ParticleSystem propulsionFlame;
+
     void Awake()
     {
         GenerateMesh();

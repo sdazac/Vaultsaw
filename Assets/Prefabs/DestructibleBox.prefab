@@ -321,11 +321,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DestructibleBox
   requiredCoins: 10
-  coinsPerHit: 1
+  hitsToDestroy: 3
   boxMeshRenderer: {fileID: 8679900832191161924}
-  intactMaterial: {fileID: 2100000, guid: 5f3bec5e51cd30c41a1acfad052e15d5, type: 2}
-  damagedMaterial: {fileID: 2100000, guid: 547cf7fcfafcd6344bf3b9b079638f8b, type: 2}
-  criticalMaterial: {fileID: 2100000, guid: 12ffa66a466beee4cb1f774b066cc0a9, type: 2}
+  crackMaterial: {fileID: 2100000, guid: 5f3bec5e51cd30c41a1acfad052e15d5, type: 2}
   costLabel: {fileID: 1164640053341333801}
   hitParticles: {fileID: 0}
   destroyParticles: {fileID: 0}
