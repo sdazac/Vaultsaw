@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "PrototipoCG.slnx"
+    "dotnet.defaultSolution": "vaultsaw.slnx"
 }
