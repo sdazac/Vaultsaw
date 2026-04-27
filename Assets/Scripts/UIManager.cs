@@ -28,6 +28,9 @@ public class UIManager : MonoBehaviour
     [Header("Main Menu")]
     public GameObject mainMenuPanel;
     public Button playButton;
+    public Button exitButton;
+    public Button muteButton;
+    public TextMeshProUGUI muteButtonText;     // To show "Mute" or "Unmute"
 
     [Header("Game Over")]
     public GameObject gameOverScreen;
@@ -75,6 +78,11 @@ public class UIManager : MonoBehaviour
         if (playButton) playButton.onClick.AddListener(OnStartPressed);
         if (restartButton) restartButton.onClick.AddListener(OnRestartPressed);
         if (mainMenuButton) mainMenuButton.onClick.AddListener(OnMainMenuPressed);
+        if (exitButton) exitButton.onClick.AddListener(OnExitPressed);
+        if (muteButton) muteButton.onClick.AddListener(OnMutePressed);
+        
+        // Update mute button text initially
+        UpdateMuteButtonText();
 
         // Estado inicial - solo mostrar menú principal si el juego no está en progreso
         if (!GameManager.Instance.IsPlaying)
@@ -280,5 +288,31 @@ public class UIManager : MonoBehaviour
     void OnMainMenuPressed()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    void OnExitPressed()
+    {
+        #if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+        #else
+            Application.Quit();
+        #endif
+    }
+
+    void OnMutePressed()
+    {
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.ToggleMusicMute();
+            UpdateMuteButtonText();
+        }
+    }
+
+    void UpdateMuteButtonText()
+    {
+        if (muteButtonText != null && AudioManager.Instance != null)
+        {
+            muteButtonText.text = AudioManager.Instance.IsMusicMuted ? "Unmute" : "Mute";
+        }
     }
 }

@@ -30,6 +30,10 @@ public class AudioManager : MonoBehaviour
     [Range(0f, 1f)] public float sfxVolume = 0.7f;
 
     private AudioSource sfxSource;
+    private bool isMusicMuted = false;
+    private float previousMusicVolume = 0.4f;
+
+    public bool IsMusicMuted => isMusicMuted;
 
     void Awake()
     {
@@ -163,5 +167,22 @@ public class AudioManager : MonoBehaviour
         // Para sonidos reales, asigna AudioClips en el Inspector.
         // Unity 6 soporta AudioRandomContainer, úsalo para variedad.
         Debug.Log($"[AudioManager] Beep procedimental (pitch x{pitchMultiplier:F2}) - Asigna clips reales en el Inspector.");
+    }
+
+    public void ToggleMusicMute()
+    {
+        if (isMusicMuted)
+        {
+            // Unmute - restore volume
+            isMusicMuted = false;
+            musicSource.volume = previousMusicVolume;
+        }
+        else
+        {
+            // Mute - save volume and set to 0
+            isMusicMuted = true;
+            previousMusicVolume = musicSource.volume;
+            musicSource.volume = 0f;
+        }
     }
 }
